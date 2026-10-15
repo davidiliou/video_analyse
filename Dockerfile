@@ -14,6 +14,7 @@ RUN npm pkg delete \
     && npm install
 
 COPY index.html vite.config.ts tsconfig.json tsconfig.node.json ./
+COPY public ./public
 COPY src ./src
 
 ENV WEB_ONLY=1
