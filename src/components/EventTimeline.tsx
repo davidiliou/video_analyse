@@ -7,7 +7,10 @@ import {
   type TeamSide,
 } from '@/types/events'
 import { formatTimestamp } from '@/utils/time'
-import { EventTypeFilter } from '@/components/EventTypeFilter'
+import {
+  ALL_EVENT_TYPES,
+  EventTypeFilter,
+} from '@/components/EventTypeFilter'
 
 type Props = {
   events: RugbyEvent[]
@@ -32,13 +35,12 @@ export function EventTimeline({
   onDelete,
   onCollapse,
 }: Props) {
-  const [typeFilter, setTypeFilter] = useState<Set<EventType>>(new Set())
+  const [typeFilter, setTypeFilter] = useState<Set<EventType>>(
+    () => new Set(ALL_EVENT_TYPES),
+  )
 
   const filtered = useMemo(() => {
-    const list =
-      typeFilter.size === 0
-        ? events
-        : events.filter((ev) => typeFilter.has(ev.type))
+    const list = events.filter((ev) => typeFilter.has(ev.type))
     return [...list].sort((a, b) => b.timestamp - a.timestamp)
   }, [events, typeFilter])
 

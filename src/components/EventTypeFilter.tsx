@@ -2,12 +2,12 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { EVENT_DEFINITIONS, type EventType } from '@/types/events'
 
 type Props = {
-  /** Set vide = tous les types affichés. */
+  /** Types cochés. Set vide = aucun événement affiché. */
   selected: Set<EventType>
   onChange: (next: Set<EventType>) => void
 }
 
-const ALL_TYPES = EVENT_DEFINITIONS.map((d) => d.type)
+export const ALL_EVENT_TYPES = EVENT_DEFINITIONS.map((d) => d.type)
 
 export function EventTypeFilter({ selected, onChange }: Props) {
   const [open, setOpen] = useState(false)
@@ -30,22 +30,21 @@ export function EventTypeFilter({ selected, onChange }: Props) {
     }
   }, [open])
 
-  const allSelected = selected.size === 0 || selected.size === ALL_TYPES.length
+  const allSelected = selected.size === ALL_EVENT_TYPES.length
+  const noneSelected = selected.size === 0
   const label = allSelected
     ? 'Tous les types'
-    : selected.size === 1
-      ? (EVENT_DEFINITIONS.find((d) => selected.has(d.type))?.label ?? '1 type')
-      : `${selected.size} types`
+    : noneSelected
+      ? 'Aucun type'
+      : selected.size === 1
+        ? (EVENT_DEFINITIONS.find((d) => selected.has(d.type))?.label ??
+          '1 type')
+        : `${selected.size} types`
 
   const toggle = (type: EventType) => {
-    const base =
-      selected.size === 0 ? new Set<EventType>(ALL_TYPES) : new Set(selected)
+    const base = new Set(selected)
     if (base.has(type)) base.delete(type)
     else base.add(type)
-    if (base.size === 0 || base.size === ALL_TYPES.length) {
-      onChange(new Set())
-      return
-    }
     onChange(base)
   }
 
@@ -76,9 +75,16 @@ export function EventTypeFilter({ selected, onChange }: Props) {
             <button
               type="button"
               className="btn btn--ghost type-filter__action"
+              onClick={() => onChange(new Set(ALL_EVENT_TYPES))}
+            >
+              Tous
+            </button>
+            <button
+              type="button"
+              className="btn btn--ghost type-filter__action"
               onClick={() => onChange(new Set())}
             >
-              Tout
+              Rien
             </button>
             <button
               type="button"
@@ -90,7 +96,7 @@ export function EventTypeFilter({ selected, onChange }: Props) {
           </div>
           <ul className="type-filter__list">
             {EVENT_DEFINITIONS.map((def) => {
-              const checked = allSelected || selected.has(def.type)
+              const checked = selected.has(def.type)
               return (
                 <li key={def.type}>
                   <label className="type-filter__option">
