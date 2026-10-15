@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useRef, useState, type ChangeEvent } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type CSSProperties,
+} from 'react'
 import { Toolbar } from '@/components/Toolbar'
 import { VideoPlayer, type VideoPlayerHandle } from '@/components/VideoPlayer'
 import { TaggingPanel } from '@/components/TaggingPanel'
@@ -20,6 +27,8 @@ import {
 } from '@/types/events'
 import type { AnalysisSession } from '@/types/session'
 import { createShortId, createUUID } from '@/utils/id'
+import { usePanelLayout } from '@/hooks/usePanelLayout'
+import { Splitter } from '@/components/Splitter'
 
 function buildSession(input: {
   id: string | null
@@ -65,6 +74,16 @@ export default function App() {
   const [status, setStatus] = useState<string | null>(null)
   const [sessionsOpen, setSessionsOpen] = useState(false)
   const [statsOpen, setStatsOpen] = useState(false)
+  const {
+    eventsWidth,
+    taggingHeight,
+    eventsOpen,
+    taggingOpen,
+    setEventsWidth,
+    setTaggingHeight,
+    setEventsOpen,
+    setTaggingOpen,
+  } = usePanelLayout()
 
   const clearObjectUrl = useCallback(() => {
     if (objectUrlRef.current) {
@@ -285,41 +304,97 @@ export default function App() {
           </button>
         </div>
       )}
-      <main className="app__main">
-        <EventTimeline
-          events={events}
-          teamNames={teamNames}
-          onSeek={seekTo}
-          onDelete={(id) =>
-            setEvents((prev) => prev.filter((ev) => ev.id !== id))
-          }
-        />
+      <main
+        className={`app__main${!eventsOpen ? ' app__main--events-collapsed' : ''}${!taggingOpen ? ' app__main--tagging-collapsed' : ''}`}
+      >
+        {eventsOpen ? (
+          <div
+            className="event-timeline-shell"
+            style={{ '--events-width': `${eventsWidth}px` } as CSSProperties}
+          >
+            <EventTimeline
+              events={events}
+              teamNames={teamNames}
+              onSeek={seekTo}
+              onDelete={(id) =>
+                setEvents((prev) => prev.filter((ev) => ev.id !== id))
+              }
+              onCollapse={() => setEventsOpen(false)}
+            />
+          </div>
+        ) : (
+          <button
+            type="button"
+            className="panel-rail panel-rail--events"
+            onClick={() => setEventsOpen(true)}
+            title="Afficher les événements"
+          >
+            <span>Événements</span>
+            <span aria-hidden>⟩</span>
+          </button>
+        )}
+
+        {eventsOpen && (
+          <Splitter
+            orientation="vertical"
+            onDrag={(delta) => setEventsWidth(eventsWidth + delta)}
+          />
+        )}
+
         <div className="app__stage">
-          <VideoPlayer
-            ref={playerRef}
-            src={videoUrl}
-            fileName={fileName}
-            playing={playing}
-            playbackRate={playbackRate}
-            events={events}
-            onPlayingChange={setPlaying}
-            onPlaybackRateChange={setPlaybackRate}
-            onTimeUpdate={(t) => setCurrentTime(t)}
-            onEnded={() => {
-              if (eventsRef.current.length > 0) setStatsOpen(true)
-            }}
-          />
-          <TaggingPanel
-            currentTime={currentTime}
-            enabled={Boolean(videoUrl)}
-            teamNames={teamNames}
-            eventCount={events.length}
-            onRenameTeam={(side, name) =>
-              setTeamNames((prev) => ({ ...prev, [side]: name }))
-            }
-            onTag={addTag}
-            onShowStats={() => setStatsOpen(true)}
-          />
+          <div className="app__player-wrap">
+            <VideoPlayer
+              ref={playerRef}
+              src={videoUrl}
+              fileName={fileName}
+              playing={playing}
+              playbackRate={playbackRate}
+              events={events}
+              onPlayingChange={setPlaying}
+              onPlaybackRateChange={setPlaybackRate}
+              onTimeUpdate={(t) => setCurrentTime(t)}
+              onEnded={() => {
+                if (eventsRef.current.length > 0) setStatsOpen(true)
+              }}
+            />
+          </div>
+
+          {taggingOpen && (
+            <Splitter
+              orientation="horizontal"
+              onDrag={(delta) => setTaggingHeight(taggingHeight - delta)}
+            />
+          )}
+
+          {taggingOpen ? (
+            <div
+              className="app__tagging-wrap"
+              style={{ height: taggingHeight }}
+            >
+              <TaggingPanel
+                currentTime={currentTime}
+                enabled={Boolean(videoUrl)}
+                teamNames={teamNames}
+                eventCount={events.length}
+                onRenameTeam={(side, name) =>
+                  setTeamNames((prev) => ({ ...prev, [side]: name }))
+                }
+                onTag={addTag}
+                onShowStats={() => setStatsOpen(true)}
+                onCollapse={() => setTaggingOpen(false)}
+              />
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="panel-rail panel-rail--tagging"
+              onClick={() => setTaggingOpen(true)}
+              title="Afficher le tagging"
+            >
+              <span>Tagging</span>
+              <span aria-hidden>˄</span>
+            </button>
+          )}
         </div>
       </main>
       <SessionsModal

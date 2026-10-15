@@ -14,6 +14,7 @@ type Props = {
   teamNames: Record<PlayingTeam, string>
   onSeek: (time: number) => void
   onDelete: (id: string) => void
+  onCollapse?: () => void
 }
 
 function teamLabel(
@@ -29,6 +30,7 @@ export function EventTimeline({
   teamNames,
   onSeek,
   onDelete,
+  onCollapse,
 }: Props) {
   const [typeFilter, setTypeFilter] = useState<Set<EventType>>(new Set())
 
@@ -45,10 +47,23 @@ export function EventTimeline({
       <header className="event-timeline__header">
         <div className="event-timeline__title-row">
           <h2 className="event-timeline__title">Événements</h2>
-          <span className="event-timeline__count">
-            {filtered.length}
-            {filtered.length !== events.length ? ` / ${events.length}` : ''}
-          </span>
+          <div className="event-timeline__title-actions">
+            <span className="event-timeline__count">
+              {filtered.length}
+              {filtered.length !== events.length ? ` / ${events.length}` : ''}
+            </span>
+            {onCollapse && (
+              <button
+                type="button"
+                className="btn btn--ghost panel-toggle"
+                onClick={onCollapse}
+                title="Masquer le panneau"
+                aria-label="Masquer les événements"
+              >
+                ⟨
+              </button>
+            )}
+          </div>
         </div>
         <EventTypeFilter selected={typeFilter} onChange={setTypeFilter} />
       </header>

@@ -18,6 +18,7 @@ type Props = {
   onRenameTeam: (side: PlayingTeam, name: string) => void
   onTag: (type: EventType, team: TeamSide, foulReason?: string) => void
   onShowStats: () => void
+  onCollapse?: () => void
 }
 
 export function TaggingPanel({
@@ -28,6 +29,7 @@ export function TaggingPanel({
   onRenameTeam,
   onTag,
   onShowStats,
+  onCollapse,
 }: Props) {
   const [pendingFoul, setPendingFoul] = useState<{
     type: EventType
@@ -55,14 +57,27 @@ export function TaggingPanel({
               : 'Ouvre une vidéo pour activer le tagging'}
           </p>
         </div>
-        <button
-          type="button"
-          className="btn btn--primary"
-          onClick={onShowStats}
-          disabled={eventCount === 0}
-        >
-          Voir le résumé
-        </button>
+        <div className="tagging__header-actions">
+          <button
+            type="button"
+            className="btn btn--primary"
+            onClick={onShowStats}
+            disabled={eventCount === 0}
+          >
+            Voir le résumé
+          </button>
+          {onCollapse && (
+            <button
+              type="button"
+              className="btn btn--ghost panel-toggle"
+              onClick={onCollapse}
+              title="Masquer le tagging"
+              aria-label="Masquer le tagging"
+            >
+              ˅
+            </button>
+          )}
+        </div>
       </header>
 
       <div className="match-phases">
