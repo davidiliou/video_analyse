@@ -4,7 +4,6 @@ import {
   MATCH_PHASE_DEFINITIONS,
   type EventType,
   type PlayingTeam,
-  type RugbyEvent,
   type TeamSide,
 } from '@/types/events'
 import { formatTimestamp } from '@/utils/time'
@@ -12,37 +11,24 @@ import { TeamTagPad } from '@/components/TeamTagPad'
 import { FoulReasonModal } from '@/components/FoulReasonModal'
 
 type Props = {
-  events: RugbyEvent[]
   currentTime: number
   enabled: boolean
   teamNames: Record<PlayingTeam, string>
+  eventCount: number
   onRenameTeam: (side: PlayingTeam, name: string) => void
   onTag: (type: EventType, team: TeamSide, foulReason?: string) => void
-  onSeek: (time: number) => void
-  onDelete: (id: string) => void
   onShowStats: () => void
 }
 
-function teamLabel(
-  team: TeamSide,
-  teamNames: Record<PlayingTeam, string>,
-): string {
-  if (team === 'neutral') return 'Match'
-  return teamNames[team] ?? team
-}
-
 export function TaggingPanel({
-  events,
   currentTime,
   enabled,
   teamNames,
+  eventCount,
   onRenameTeam,
   onTag,
-  onSeek,
-  onDelete,
   onShowStats,
 }: Props) {
-  const sorted = [...events].sort((a, b) => b.timestamp - a.timestamp)
   const [pendingFoul, setPendingFoul] = useState<{
     type: EventType
     team: PlayingTeam
@@ -73,7 +59,7 @@ export function TaggingPanel({
           type="button"
           className="btn btn--primary"
           onClick={onShowStats}
-          disabled={events.length === 0}
+          disabled={eventCount === 0}
         >
           Voir le résumé
         </button>
@@ -113,53 +99,6 @@ export function TaggingPanel({
           onRename={(name) => onRenameTeam('away', name)}
           onTag={handleTeamTag}
         />
-      </div>
-
-      <div className="tagging__list-wrap">
-        {sorted.length === 0 ? (
-          <p className="tagging__empty">
-            Aucun événement. Utilise les boutons de temps de jeu ou d’équipe.
-          </p>
-        ) : (
-          <ul className="event-list">
-            {sorted.map((ev) => {
-              const def = EVENT_BY_TYPE[ev.type]
-              const label = ev.foulReason
-                ? `${def?.label ?? ev.type} — ${ev.foulReason}`
-                : (def?.label ?? ev.type)
-              return (
-                <li key={ev.id} className="event-list__item">
-                  <button
-                    type="button"
-                    className="event-list__seek"
-                    onClick={() => onSeek(ev.timestamp)}
-                    title="Aller à cet instant"
-                  >
-                    <span
-                      className="event-list__dot"
-                      style={{ background: def?.color ?? '#888' }}
-                    />
-                    <span className="event-list__time">
-                      {formatTimestamp(ev.timestamp)}
-                    </span>
-                    <span className="event-list__label">{label}</span>
-                    <span className="event-list__team">
-                      {teamLabel(ev.team, teamNames)}
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn--ghost"
-                    onClick={() => onDelete(ev.id)}
-                    aria-label="Supprimer"
-                  >
-                    ✕
-                  </button>
-                </li>
-              )
-            })}
-          </ul>
-        )}
       </div>
 
       <FoulReasonModal

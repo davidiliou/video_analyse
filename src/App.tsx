@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, type ChangeEvent } from 'reac
 import { Toolbar } from '@/components/Toolbar'
 import { VideoPlayer, type VideoPlayerHandle } from '@/components/VideoPlayer'
 import { TaggingPanel } from '@/components/TaggingPanel'
+import { EventTimeline } from '@/components/EventTimeline'
 import { SessionsModal } from '@/components/SessionsModal'
 import { StatsSummary } from '@/components/StatsSummary'
 import {
@@ -285,35 +286,41 @@ export default function App() {
         </div>
       )}
       <main className="app__main">
-        <VideoPlayer
-          ref={playerRef}
-          src={videoUrl}
-          fileName={fileName}
-          playing={playing}
-          playbackRate={playbackRate}
+        <EventTimeline
           events={events}
-          onPlayingChange={setPlaying}
-          onPlaybackRateChange={setPlaybackRate}
-          onTimeUpdate={(t) => setCurrentTime(t)}
-          onEnded={() => {
-            if (eventsRef.current.length > 0) setStatsOpen(true)
-          }}
-        />
-        <TaggingPanel
-          events={events}
-          currentTime={currentTime}
-          enabled={Boolean(videoUrl)}
           teamNames={teamNames}
-          onRenameTeam={(side, name) =>
-            setTeamNames((prev) => ({ ...prev, [side]: name }))
-          }
-          onTag={addTag}
           onSeek={seekTo}
           onDelete={(id) =>
             setEvents((prev) => prev.filter((ev) => ev.id !== id))
           }
-          onShowStats={() => setStatsOpen(true)}
         />
+        <div className="app__stage">
+          <VideoPlayer
+            ref={playerRef}
+            src={videoUrl}
+            fileName={fileName}
+            playing={playing}
+            playbackRate={playbackRate}
+            events={events}
+            onPlayingChange={setPlaying}
+            onPlaybackRateChange={setPlaybackRate}
+            onTimeUpdate={(t) => setCurrentTime(t)}
+            onEnded={() => {
+              if (eventsRef.current.length > 0) setStatsOpen(true)
+            }}
+          />
+          <TaggingPanel
+            currentTime={currentTime}
+            enabled={Boolean(videoUrl)}
+            teamNames={teamNames}
+            eventCount={events.length}
+            onRenameTeam={(side, name) =>
+              setTeamNames((prev) => ({ ...prev, [side]: name }))
+            }
+            onTag={addTag}
+            onShowStats={() => setStatsOpen(true)}
+          />
+        </div>
       </main>
       <SessionsModal
         open={sessionsOpen}
