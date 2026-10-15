@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type KeyboardEvent } from 'react'
 import {
   EVENT_BY_TYPE,
   type EventType,
@@ -6,7 +6,7 @@ import {
   type RugbyEvent,
   type TeamSide,
 } from '@/types/events'
-import { formatTimestamp } from '@/utils/time'
+import { formatTimestamp, parseTimestamp } from '@/utils/time'
 import {
   ALL_EVENT_TYPES,
   EventTypeFilter,
@@ -16,6 +16,7 @@ type Props = {
   events: RugbyEvent[]
   teamNames: Record<PlayingTeam, string>
   onSeek: (time: number) => void
+  onUpdateTimestamp: (id: string, timestamp: number) => void
   onDelete: (id: string) => void
   onCollapse?: () => void
 }
@@ -28,10 +29,106 @@ function teamLabel(
   return teamNames[team] ?? team
 }
 
+function EventTimeControl({
+  timestamp,
+  onChange,
+  onSeek,
+}: {
+  timestamp: number
+  onChange: (next: number) => void
+  onSeek: (time: number) => void
+}) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(formatTimestamp(timestamp))
+
+  const commit = (raw: string) => {
+    const parsed = parseTimestamp(raw)
+    setEditing(false)
+    if (parsed === null) {
+      setDraft(formatTimestamp(timestamp))
+      return
+    }
+    const next = Math.max(0, parsed)
+    if (Math.abs(next - timestamp) < 0.001) {
+      setDraft(formatTimestamp(timestamp))
+      onSeek(timestamp)
+      return
+    }
+    onChange(next)
+  }
+
+  const nudge = (delta: number) => {
+    onChange(Math.max(0, timestamp + delta))
+  }
+
+  const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      commit(draft)
+    } else if (e.key === 'Escape') {
+      e.preventDefault()
+      setDraft(formatTimestamp(timestamp))
+      setEditing(false)
+    }
+  }
+
+  return (
+    <div
+      className="event-list__time-control"
+      onClick={(e) => e.stopPropagation()}
+      title="Ajuster le timecode (−1s / +1s)"
+    >
+      <button
+        type="button"
+        className="event-list__nudge"
+        onClick={() => nudge(-1)}
+        title="Reculer d’1 seconde"
+        aria-label="Reculer d’1 seconde"
+      >
+        −1s
+      </button>
+      {editing ? (
+        <input
+          className="event-list__time-input"
+          value={draft}
+          autoFocus
+          aria-label="Timecode du tag"
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={() => commit(draft)}
+          onKeyDown={onKeyDown}
+        />
+      ) : (
+        <button
+          type="button"
+          className="event-list__time"
+          title="Cliquer pour saisir un timecode (mm:ss)"
+          onClick={() => {
+            setDraft(formatTimestamp(timestamp))
+            setEditing(true)
+            onSeek(timestamp)
+          }}
+        >
+          {formatTimestamp(timestamp)}
+        </button>
+      )}
+      <button
+        type="button"
+        className="event-list__nudge"
+        onClick={() => nudge(1)}
+        title="Avancer d’1 seconde"
+        aria-label="Avancer d’1 seconde"
+      >
+        +1s
+      </button>
+    </div>
+  )
+}
+
 export function EventTimeline({
   events,
   teamNames,
   onSeek,
+  onUpdateTimestamp,
   onDelete,
   onCollapse,
 }: Props) {
@@ -88,24 +185,28 @@ export function EventTimeline({
                 : (def?.label ?? ev.type)
               return (
                 <li key={ev.id} className="event-list__item">
-                  <button
-                    type="button"
-                    className="event-list__seek"
-                    onClick={() => onSeek(ev.timestamp)}
-                    title="Aller à cet instant"
-                  >
+                  <div className="event-list__row">
                     <span
                       className="event-list__dot"
                       style={{ background: def?.color ?? '#888' }}
                     />
-                    <span className="event-list__time">
-                      {formatTimestamp(ev.timestamp)}
-                    </span>
-                    <span className="event-list__label">{label}</span>
-                    <span className="event-list__team">
-                      {teamLabel(ev.team, teamNames)}
-                    </span>
-                  </button>
+                    <EventTimeControl
+                      timestamp={ev.timestamp}
+                      onSeek={onSeek}
+                      onChange={(next) => onUpdateTimestamp(ev.id, next)}
+                    />
+                    <button
+                      type="button"
+                      className="event-list__seek"
+                      onClick={() => onSeek(ev.timestamp)}
+                      title="Aller à cet instant"
+                    >
+                      <span className="event-list__label">{label}</span>
+                      <span className="event-list__team">
+                        {teamLabel(ev.team, teamNames)}
+                      </span>
+                    </button>
+                  </div>
                   <button
                     type="button"
                     className="btn btn--ghost"

@@ -933,16 +933,26 @@ button {
   border-radius: 6px;
   background: var(--bg);
   border: 1px solid transparent;
+  padding-right: 0.15rem;
 }
 
 .event-list__item:hover {
   border-color: var(--border);
 }
 
-.event-list__seek {
+.event-list__row {
   flex: 1;
   display: grid;
-  grid-template-columns: auto 3.6rem minmax(0, 1fr) auto;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.25rem 0.3rem 0.4rem;
+  min-width: 0;
+}
+
+.event-list__seek {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 0.45rem;
   appearance: none;
@@ -950,7 +960,7 @@ button {
   background: transparent;
   color: inherit;
   text-align: left;
-  padding: 0.4rem 0.4rem;
+  padding: 0.15rem 0.2rem;
   cursor: pointer;
   font: inherit;
   min-width: 0;
@@ -972,10 +982,71 @@ button {
   flex-shrink: 0;
 }
 
+.event-list__time-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  flex-shrink: 0;
+  padding: 0.15rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+}
+
+.event-list__nudge {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: var(--bg-panel);
+  color: var(--text);
+  min-width: 2.1rem;
+  height: 1.55rem;
+  border-radius: 4px;
+  padding: 0 0.25rem;
+  font: inherit;
+  font-size: 0.68rem;
+  font-weight: 650;
+  font-family: var(--mono);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.event-list__nudge:hover {
+  border-color: var(--accent-dim);
+  color: var(--accent);
+  background: var(--bg);
+}
+
 .event-list__time {
+  appearance: none;
+  border: 1px solid transparent;
+  background: transparent;
   font-family: var(--mono);
   font-size: 0.8rem;
+  font-weight: 600;
   color: var(--accent);
+  padding: 0.15rem 0.3rem;
+  border-radius: 4px;
+  cursor: text;
+  min-width: 3.4rem;
+  text-align: center;
+}
+
+.event-list__time:hover {
+  border-color: var(--accent-dim);
+  background: var(--bg);
+}
+
+.event-list__time-input {
+  width: 4.4rem;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--bg);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  padding: 0.15rem 0.25rem;
+  text-align: center;
 }
 
 .event-list__label {
@@ -984,6 +1055,7 @@ button {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 0;
 }
 
 .event-list__team {
@@ -1204,12 +1276,14 @@ button {
     --tag-size: 3.1rem;
   }
 
-  .event-list__seek {
-    grid-template-columns: auto 3.5rem minmax(0, 1fr) auto;
-  }
-
   .event-list__team {
     max-width: 5.5rem;
+  }
+
+  .event-list__nudge {
+    min-width: 1.9rem;
+    height: 1.45rem;
+    font-size: 0.62rem;
   }
 }
 

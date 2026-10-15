@@ -370,6 +370,14 @@ export default function App() {
               events={events}
               teamNames={teamNames}
               onSeek={seekTo}
+              onUpdateTimestamp={(id, timestamp) => {
+                setEvents((prev) =>
+                  prev.map((ev) =>
+                    ev.id === id ? { ...ev, timestamp } : ev,
+                  ),
+                )
+                seekTo(timestamp)
+              }}
               onDelete={(id) =>
                 setEvents((prev) => prev.filter((ev) => ev.id !== id))
               }
