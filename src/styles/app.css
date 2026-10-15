@@ -987,9 +987,15 @@ button {
   align-items: center;
   gap: 0.15rem;
   flex-shrink: 0;
-  padding: 0.15rem;
+  padding: 0;
   border-radius: 6px;
-  border: 1px solid var(--border);
+  border: 1px solid transparent;
+  background: transparent;
+}
+
+.event-list__time-control--open {
+  padding: 0.15rem;
+  border-color: var(--border);
   background: var(--bg-elevated);
 }
 

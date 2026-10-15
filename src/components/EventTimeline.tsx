@@ -1,4 +1,10 @@
-import { useMemo, useState, type KeyboardEvent } from 'react'
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent,
+} from 'react'
 import {
   EVENT_BY_TYPE,
   type EventType,
@@ -38,8 +44,30 @@ function EventTimeControl({
   onChange: (next: number) => void
   onSeek: (time: number) => void
 }) {
+  const rootRef = useRef<HTMLDivElement>(null)
+  const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(formatTimestamp(timestamp))
+
+  useEffect(() => {
+    if (!open) return
+    const onDoc = (e: MouseEvent) => {
+      if (!rootRef.current?.contains(e.target as Node)) {
+        setOpen(false)
+        setEditing(false)
+        setDraft(formatTimestamp(timestamp))
+      }
+    }
+    const onKey = (e: globalThis.KeyboardEvent) => {
+      if (e.key === 'Escape' && !editing) setOpen(false)
+    }
+    document.addEventListener('mousedown', onDoc)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDoc)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open, editing, timestamp])
 
   const commit = (raw: string) => {
     const parsed = parseTimestamp(raw)
@@ -74,19 +102,21 @@ function EventTimeControl({
 
   return (
     <div
-      className="event-list__time-control"
+      ref={rootRef}
+      className={`event-list__time-control${open ? ' event-list__time-control--open' : ''}`}
       onClick={(e) => e.stopPropagation()}
-      title="Ajuster le timecode (−1s / +1s)"
     >
-      <button
-        type="button"
-        className="event-list__nudge"
-        onClick={() => nudge(-1)}
-        title="Reculer d’1 seconde"
-        aria-label="Reculer d’1 seconde"
-      >
-        −1s
-      </button>
+      {open && (
+        <button
+          type="button"
+          className="event-list__nudge"
+          onClick={() => nudge(-1)}
+          title="Reculer d’1 seconde"
+          aria-label="Reculer d’1 seconde"
+        >
+          −1s
+        </button>
+      )}
       {editing ? (
         <input
           className="event-list__time-input"
@@ -101,25 +131,35 @@ function EventTimeControl({
         <button
           type="button"
           className="event-list__time"
-          title="Cliquer pour saisir un timecode (mm:ss)"
+          title={
+            open
+              ? 'Cliquer pour saisir un timecode (mm:ss)'
+              : 'Cliquer pour ajuster (−1s / +1s)'
+          }
           onClick={() => {
+            onSeek(timestamp)
+            if (!open) {
+              setOpen(true)
+              return
+            }
             setDraft(formatTimestamp(timestamp))
             setEditing(true)
-            onSeek(timestamp)
           }}
         >
           {formatTimestamp(timestamp)}
         </button>
       )}
-      <button
-        type="button"
-        className="event-list__nudge"
-        onClick={() => nudge(1)}
-        title="Avancer d’1 seconde"
-        aria-label="Avancer d’1 seconde"
-      >
-        +1s
-      </button>
+      {open && (
+        <button
+          type="button"
+          className="event-list__nudge"
+          onClick={() => nudge(1)}
+          title="Avancer d’1 seconde"
+          aria-label="Avancer d’1 seconde"
+        >
+          +1s
+        </button>
+      )}
     </div>
   )
 }
