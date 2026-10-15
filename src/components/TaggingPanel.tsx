@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import {
+  EFFECTIVE_PLAY_DEFINITIONS,
   EVENT_BY_TYPE,
   MATCH_PHASE_DEFINITIONS,
   type EventType,
@@ -84,6 +85,24 @@ export function TaggingPanel({
         <h3 className="match-phases__title">Temps de jeu</h3>
         <div className="match-phases__buttons">
           {MATCH_PHASE_DEFINITIONS.map((def) => (
+            <button
+              key={def.type}
+              type="button"
+              className="tag-btn"
+              style={{ ['--tag-color' as string]: def.color }}
+              disabled={!enabled}
+              onClick={() => onTag(def.type, 'neutral')}
+              title={def.label}
+            >
+              {def.shortLabel ?? def.label}
+            </button>
+          ))}
+        </div>
+        <h3 className="match-phases__title match-phases__title--sub">
+          Jeu effectif
+        </h3>
+        <div className="match-phases__buttons">
+          {EFFECTIVE_PLAY_DEFINITIONS.map((def) => (
             <button
               key={def.type}
               type="button"

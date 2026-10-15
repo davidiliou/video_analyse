@@ -48,6 +48,28 @@ function teamBlock(name: string, t: TeamStats): string[] {
   ]
 }
 
+function effectivePlayLines(period: PeriodStats): string[] {
+  const ep = period.effectivePlay
+  if (ep.segmentCount === 0 && !ep.openSegment) {
+    return [
+      '  Temps effectif : (tague En jeu / Arrêté)',
+      '',
+    ]
+  }
+  const avg =
+    ep.averageSeconds === null ? '—' : formatTimestamp(ep.averageSeconds)
+  const lines = [
+    `  Temps effectif              : ${formatTimestamp(ep.totalSeconds)}`,
+    `  Séquences de jeu            : ${ep.segmentCount}`,
+    `  Durée moyenne d’un temps    : ${avg}`,
+  ]
+  if (ep.openSegment) {
+    lines.push('  (segment En jeu encore ouvert)')
+  }
+  lines.push('')
+  return lines
+}
+
 function periodSection(
   period: PeriodStats,
   teamNames: Record<PlayingTeam, string>,
@@ -58,6 +80,7 @@ function periodSection(
     `Score : ${teamNames.home} ${period.score.home} — ${period.score.away} ${teamNames.away}`,
     `Événements : ${period.totalEvents}`,
     '',
+    ...effectivePlayLines(period),
     ...teamBlock(teamNames.home, period.home),
     '',
     ...teamBlock(teamNames.away, period.away),
@@ -94,13 +117,15 @@ export function buildSummaryText(input: {
     `Vidéo   : ${input.videoFileName || '—'}`,
     `Généré  : ${new Date().toLocaleString('fr-FR')}`,
     '',
-    'Temps de jeu :',
+    'Bornes du match :',
     ...(full.phases.length > 0
       ? full.phases.map(
           (p) => `  - ${p.label} : ${formatTimestamp(p.timestamp)}`,
         )
       : ['  (aucun marqueur début/fin mi-temps — tague-les pour découper les MT)']),
     '',
+    'Temps de jeu effectif (match) :',
+    ...effectivePlayLines(full),
   ]
 
   return `${header.join('\n')}${periods.map((p) => periodSection(p, input.teamNames)).join('\n')}`
@@ -151,12 +176,16 @@ export function exportSummaryCsv(input: {
     'ruck_win_pct',
     'carton_jaune',
     'carton_rouge',
+    'temps_effectif_s',
+    'sequences_jeu',
+    'duree_moyenne_s',
   ]
 
   const rows: string[] = []
   for (const period of periods) {
     for (const side of ['home', 'away'] as const) {
       const t = period[side]
+      const ep = period.effectivePlay
       const pct = (rate: number | null) =>
         rate === null ? '' : String(Math.round(rate * 100))
       rows.push(
@@ -185,6 +214,9 @@ export function exportSummaryCsv(input: {
           pct(t.ruckWinRate),
           t.cartonJaune,
           t.cartonRouge,
+          ep.totalSeconds.toFixed(1),
+          ep.segmentCount,
+          ep.averageSeconds === null ? '' : ep.averageSeconds.toFixed(1),
         ]
           .map((cell) => `"${String(cell).replace(/"/g, '""')}"`)
           .join(','),

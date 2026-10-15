@@ -173,7 +173,25 @@ function drawPeriodCard(
     { align: 'center' },
   )
 
-  cy += 6
+  cy += 4
+  const ep = period.effectivePlay
+  setText(doc, COLORS.muted)
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(6)
+  if (ep.segmentCount > 0) {
+    const avg =
+      ep.averageSeconds === null ? '—' : formatTimestamp(ep.averageSeconds)
+    doc.text(
+      `Effectif ${formatTimestamp(ep.totalSeconds)}  ·  moy. ${avg}  ·  ${ep.segmentCount} seq.`,
+      x + w / 2,
+      cy,
+      { align: 'center' },
+    )
+  } else {
+    doc.text('Temps effectif : —', x + w / 2, cy, { align: 'center' })
+  }
+
+  cy += 4
   setDraw(doc, COLORS.line)
   doc.setLineWidth(0.3)
   doc.line(x + 4, cy, x + w - 4, cy)

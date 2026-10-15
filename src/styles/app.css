@@ -620,9 +620,8 @@ button {
 
 .match-phases {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.4rem 0.6rem;
+  flex-direction: column;
+  gap: 0.35rem;
   padding: 0.4rem 0.75rem;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
@@ -635,12 +634,16 @@ button {
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--text-muted);
-  min-width: 4.5rem;
+}
+
+.match-phases__title--sub {
+  margin-top: 0.15rem;
 }
 
 .match-phases__buttons {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 0.3rem;
 }
 

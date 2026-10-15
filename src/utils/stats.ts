@@ -1,5 +1,7 @@
 import {
+  EFFECTIVE_PLAY_TYPES,
   EVENT_DEFINITIONS,
+  MATCH_BOUNDARY_TYPES,
   MATCH_PHASE_DEFINITIONS,
   POINTS_BY_TYPE,
   type EventType,
@@ -47,17 +49,37 @@ export type MatchStats = {
   phases: MatchPhaseStamp[]
 }
 
+export type EffectivePlayStats = {
+  /** Somme des segments ballon en jeu (secondes). */
+  totalSeconds: number
+  /** Nombre de segments complets. */
+  segmentCount: number
+  /** Durée moyenne d’un temps de jeu (secondes), ou null. */
+  averageSeconds: number | null
+  /** Un segment « en jeu » n’a pas encore été refermé. */
+  openSegment: boolean
+}
+
 export type PeriodKey = 'first_half' | 'second_half' | 'full'
 
 export type PeriodStats = MatchStats & {
   key: PeriodKey
   label: string
   range: { start: number | null; end: number | null }
+  effectivePlay: EffectivePlayStats
 }
 
-const PHASE_TYPES = new Set(
-  MATCH_PHASE_DEFINITIONS.map((d) => d.type),
-)
+/** Marqueurs exclus des stats d’équipe. */
+const NON_TEAM_TYPES = new Set<EventType>([
+  ...MATCH_BOUNDARY_TYPES,
+  ...EFFECTIVE_PLAY_TYPES,
+])
+
+const AUTO_CLOSE_TYPES = new Set<EventType>([
+  'jeu_arrete',
+  'fin_mi_temps',
+  'fin_match',
+])
 
 function emptyCounts(): Record<EventType, number> {
   return Object.fromEntries(
@@ -141,9 +163,69 @@ function phaseTime(phases: MatchPhaseStamp[], type: EventType): number | null {
   return phases.find((p) => p.type === type)?.timestamp ?? null
 }
 
+/**
+ * Temps de jeu effectif = somme des intervalles « Ballon en jeu » → « Ballon arrêté ».
+ * Un segment ouvert est refermé automatiquement par Fin MT / Fin match,
+ * ou par la borne `range.end` si fournie.
+ */
+export function computeEffectivePlay(
+  events: RugbyEvent[],
+  range?: { start: number | null; end: number | null },
+): EffectivePlayStats {
+  const rangeStart = range?.start ?? null
+  const rangeEnd = range?.end ?? null
+
+  const relevant = events
+    .filter((ev) => {
+      if (
+        ev.type !== 'jeu_repris' &&
+        !AUTO_CLOSE_TYPES.has(ev.type)
+      ) {
+        return false
+      }
+      if (rangeStart !== null && ev.timestamp < rangeStart) return false
+      if (rangeEnd !== null && ev.timestamp > rangeEnd) return false
+      return true
+    })
+    .sort(
+      (a, b) =>
+        a.timestamp - b.timestamp || a.createdAt - b.createdAt,
+    )
+
+  let openAt: number | null = null
+  const segments: number[] = []
+
+  for (const ev of relevant) {
+    if (ev.type === 'jeu_repris') {
+      if (openAt === null) openAt = ev.timestamp
+      continue
+    }
+    if (AUTO_CLOSE_TYPES.has(ev.type) && openAt !== null) {
+      const dur = ev.timestamp - openAt
+      if (dur > 0) segments.push(dur)
+      openAt = null
+    }
+  }
+
+  if (openAt !== null && rangeEnd !== null && rangeEnd > openAt) {
+    segments.push(rangeEnd - openAt)
+    openAt = null
+  }
+
+  const totalSeconds = segments.reduce((sum, d) => sum + d, 0)
+  const segmentCount = segments.length
+
+  return {
+    totalSeconds,
+    segmentCount,
+    averageSeconds: segmentCount > 0 ? totalSeconds / segmentCount : null,
+    openSegment: openAt !== null,
+  }
+}
+
 export function computeMatchStats(events: RugbyEvent[]): MatchStats {
-  // Les marqueurs de temps de jeu ne comptent pas dans les stats d'equipe.
-  const playing = events.filter((ev) => !PHASE_TYPES.has(ev.type))
+  // Les marqueurs de phase / chrono ne comptent pas dans les stats d'équipe.
+  const playing = events.filter((ev) => !NON_TEAM_TYPES.has(ev.type))
   const home = buildTeamStats('home', playing)
   const away = buildTeamStats('away', playing)
   const phases = extractPhases(events)
@@ -178,7 +260,7 @@ export function splitEventsByHalf(events: RugbyEvent[]): {
   const secondStart = debutMt ?? finMt
   const secondEnd = fin
 
-  const isPlayingEvent = (ev: RugbyEvent) => !PHASE_TYPES.has(ev.type)
+  const isPlayingEvent = (ev: RugbyEvent) => !NON_TEAM_TYPES.has(ev.type)
 
   const firstHalf = events.filter((ev) => {
     if (!isPlayingEvent(ev)) return false
@@ -214,16 +296,19 @@ export function computeAllPeriodStats(events: RugbyEvent[]): PeriodStats[] {
   const full = computeMatchStats(events)
   const { firstHalf, secondHalf, ranges, phases } = splitEventsByHalf(events)
 
+  const fullRange = {
+    start: phaseTime(phases, 'debut_match'),
+    end: phaseTime(phases, 'fin_match'),
+  }
+
   const periods: PeriodStats[] = [
     {
       ...full,
       key: 'full',
       label: 'Match entier',
-      range: {
-        start: phaseTime(phases, 'debut_match'),
-        end: phaseTime(phases, 'fin_match'),
-      },
+      range: fullRange,
       phases,
+      effectivePlay: computeEffectivePlay(events, fullRange),
     },
   ]
 
@@ -235,6 +320,7 @@ export function computeAllPeriodStats(events: RugbyEvent[]): PeriodStats[] {
       label: '1re mi-temps',
       range: ranges.first,
       phases,
+      effectivePlay: computeEffectivePlay(events, ranges.first),
     })
   }
 
@@ -246,6 +332,7 @@ export function computeAllPeriodStats(events: RugbyEvent[]): PeriodStats[] {
       label: '2e mi-temps',
       range: ranges.second,
       phases,
+      effectivePlay: computeEffectivePlay(events, ranges.second),
     })
   }
 

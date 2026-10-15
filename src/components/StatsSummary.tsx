@@ -42,6 +42,54 @@ function StatRow({
   )
 }
 
+function EffectivePlayBlock({ stats }: { stats: PeriodStats }) {
+  const ep = stats.effectivePlay
+  if (ep.segmentCount === 0 && !ep.openSegment) {
+    return (
+      <p className="modal__hint stats-half-hint">
+        Tague « En jeu » / « Arrêté » pour mesurer le temps de jeu effectif.
+      </p>
+    )
+  }
+
+  return (
+    <>
+      <h3 className="stats-section-title">Temps de jeu effectif</h3>
+      <div className="stats-table">
+        <div className="stats-row stats-row--phase">
+          <span className="stats-row__label stats-row__label--wide">
+            Temps effectif
+          </span>
+          <span className="stats-row__right">
+            {formatTimestamp(ep.totalSeconds)}
+          </span>
+        </div>
+        <div className="stats-row stats-row--phase">
+          <span className="stats-row__label stats-row__label--wide">
+            Nombre de séquences
+          </span>
+          <span className="stats-row__right">{ep.segmentCount}</span>
+        </div>
+        <div className="stats-row stats-row--phase">
+          <span className="stats-row__label stats-row__label--wide">
+            Durée moyenne d’un temps de jeu
+          </span>
+          <span className="stats-row__right">
+            {ep.averageSeconds === null
+              ? '—'
+              : formatTimestamp(ep.averageSeconds)}
+          </span>
+        </div>
+        {ep.openSegment && (
+          <p className="modal__hint stats-half-hint">
+            Un segment « En jeu » est encore ouvert (pas de « Arrêté »).
+          </p>
+        )}
+      </div>
+    </>
+  )
+}
+
 function PeriodBody({
   stats,
   teamNames,
@@ -74,6 +122,7 @@ function PeriodBody({
         {stats.totalEvents} événement{stats.totalEvents > 1 ? 's' : ''}
       </p>
 
+      <EffectivePlayBlock stats={stats} />
       <PeriodTables home={home} away={away} />
     </>
   )
@@ -257,7 +306,7 @@ export function StatsSummary({
 
           {full.phases.length > 0 && active.key === 'full' && (
             <>
-              <h3 className="stats-section-title">Temps de jeu</h3>
+              <h3 className="stats-section-title">Bornes du match</h3>
               <div className="stats-table">
                 {full.phases.map((phase) => (
                   <div key={phase.type} className="stats-row stats-row--phase">

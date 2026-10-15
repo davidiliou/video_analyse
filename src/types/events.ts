@@ -4,6 +4,8 @@ export type EventType =
   | 'fin_mi_temps'
   | 'debut_mi_temps'
   | 'fin_match'
+  | 'jeu_repris'
+  | 'jeu_arrete'
   | 'touche_gagnee'
   | 'touche_perdue'
   | 'melee_gagnee'
@@ -110,6 +112,20 @@ export const EVENT_DEFINITIONS: EventDefinition[] = [
     color: '#e76f51',
     group: 'match',
   },
+  {
+    type: 'jeu_repris',
+    label: 'Ballon en jeu',
+    shortLabel: 'En jeu',
+    color: '#2a9d8f',
+    group: 'match',
+  },
+  {
+    type: 'jeu_arrete',
+    label: 'Ballon arrêté',
+    shortLabel: 'Arrêté',
+    color: '#8d99ae',
+    group: 'match',
+  },
   { type: 'touche_gagnee', label: 'Touche gagnée', color: '#9b5de5', group: 'conquete' },
   { type: 'touche_perdue', label: 'Touche perdue', color: '#6c4a8a', group: 'conquete' },
   { type: 'melee_gagnee', label: 'Mêlée gagnée', color: '#ef476f', group: 'conquete' },
@@ -170,8 +186,23 @@ export const EVENT_DEFINITIONS: EventDefinition[] = [
   { type: 'carton_rouge', label: 'Carton rouge', color: '#e63946', group: 'discipline' },
 ]
 
-export const MATCH_PHASE_DEFINITIONS = EVENT_DEFINITIONS.filter(
-  (d) => d.group === 'match',
+/** Bornes de match / mi-temps (découpe des périodes). */
+export const MATCH_BOUNDARY_TYPES: EventType[] = [
+  'debut_match',
+  'fin_mi_temps',
+  'debut_mi_temps',
+  'fin_match',
+]
+
+export const MATCH_PHASE_DEFINITIONS = EVENT_DEFINITIONS.filter((d) =>
+  MATCH_BOUNDARY_TYPES.includes(d.type),
+)
+
+/** Chrono ballon en jeu / arrêté (temps de jeu effectif). */
+export const EFFECTIVE_PLAY_TYPES: EventType[] = ['jeu_repris', 'jeu_arrete']
+
+export const EFFECTIVE_PLAY_DEFINITIONS = EVENT_DEFINITIONS.filter((d) =>
+  EFFECTIVE_PLAY_TYPES.includes(d.type),
 )
 
 export const EVENT_BY_TYPE = Object.fromEntries(
