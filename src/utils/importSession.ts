@@ -1,4 +1,10 @@
-import type { RugbyEvent, EventType, TeamSide } from '@/types/events'
+import {
+  DEFAULT_TEAM_NAMES,
+  type RugbyEvent,
+  type EventType,
+  type PlayingTeam,
+  type TeamSide,
+} from '@/types/events'
 import type { AnalysisSession } from '@/types/session'
 
 const TEAM_SIDES = new Set(['home', 'away', 'neutral'])
@@ -67,15 +73,34 @@ export function parseSessionJson(raw: string): AnalysisSession {
     videoFileName?.replace(/\.[^.]+$/, '') ||
     'Session importée'
 
+  const teamNames = parseTeamNames(obj.teamNames)
+
   return {
     id: typeof obj.id === 'string' && obj.id ? obj.id : cryptoRandomId(),
     name,
     videoFileName,
     videoPath: typeof obj.videoPath === 'string' ? obj.videoPath : null,
+    teamNames,
     events,
     createdAt: typeof obj.createdAt === 'number' ? obj.createdAt : now,
     updatedAt: typeof obj.updatedAt === 'number' ? obj.updatedAt : now,
   }
+}
+
+function parseTeamNames(
+  value: unknown,
+): Record<PlayingTeam, string> {
+  if (!value || typeof value !== 'object') return { ...DEFAULT_TEAM_NAMES }
+  const obj = value as Record<string, unknown>
+  const home =
+    typeof obj.home === 'string' && obj.home.trim()
+      ? obj.home.trim()
+      : DEFAULT_TEAM_NAMES.home
+  const away =
+    typeof obj.away === 'string' && obj.away.trim()
+      ? obj.away.trim()
+      : DEFAULT_TEAM_NAMES.away
+  return { home, away }
 }
 
 function cryptoRandomId(): string {

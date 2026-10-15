@@ -36,6 +36,7 @@ function buildSession(input: {
   name: string
   videoFileName: string | null
   videoPath?: string | null
+  teamNames: Record<'home' | 'away', string>
   events: RugbyEvent[]
   createdAt?: number
 }): AnalysisSession {
@@ -45,6 +46,7 @@ function buildSession(input: {
     name: input.name,
     videoFileName: input.videoFileName,
     videoPath: input.videoPath ?? null,
+    teamNames: input.teamNames,
     events: input.events,
     createdAt: input.createdAt ?? now,
     updatedAt: now,
@@ -106,6 +108,9 @@ export default function App() {
     setSessionId(draft.sessionId)
     setSessionName(draft.sessionName)
     setFileName(draft.videoFileName)
+    if (draft.teamNames?.home && draft.teamNames?.away) {
+      setTeamNames(draft.teamNames)
+    }
     setEvents(draft.events)
     keepEventsOnNextOpen.current = true
     setStatus(
@@ -124,10 +129,11 @@ export default function App() {
       sessionId,
       sessionName,
       videoFileName: fileName,
+      teamNames,
       events,
       updatedAt: Date.now(),
     })
-  }, [events, sessionId, sessionName, fileName])
+  }, [events, sessionId, sessionName, fileName, teamNames])
 
   const applyVideo = useCallback(
     (url: string, name: string, path: string | null = null) => {
@@ -214,10 +220,19 @@ export default function App() {
       name: sessionName || fileName || 'Analyse',
       videoFileName: fileName,
       videoPath,
+      teamNames,
       events,
       createdAt: sessionCreatedAt,
     })
-  }, [sessionId, sessionName, fileName, videoPath, events, sessionCreatedAt])
+  }, [
+    sessionId,
+    sessionName,
+    fileName,
+    videoPath,
+    teamNames,
+    events,
+    sessionCreatedAt,
+  ])
 
   const onExportJson = useCallback(() => {
     exportSessionJson(currentSession())
@@ -225,9 +240,9 @@ export default function App() {
   }, [currentSession])
 
   const onExportCsv = useCallback(() => {
-    exportEventsCsv(events, fileName)
+    exportEventsCsv(events, fileName, teamNames)
     setStatus('Export CSV téléchargé.')
-  }, [events, fileName])
+  }, [events, fileName, teamNames])
 
   const onSaveServer = useCallback(async () => {
     if (!apiAvailable || events.length === 0) return
@@ -256,6 +271,11 @@ export default function App() {
     setSessionCreatedAt(session.createdAt)
     setFileName(session.videoFileName)
     setVideoPath(session.videoPath ?? null)
+    setTeamNames(
+      session.teamNames?.home && session.teamNames?.away
+        ? session.teamNames
+        : DEFAULT_TEAM_NAMES,
+    )
     setEvents(session.events)
     setPlaying(false)
     setCurrentTime(0)

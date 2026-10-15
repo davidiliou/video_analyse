@@ -1,4 +1,8 @@
-import { EVENT_BY_TYPE, type RugbyEvent } from '@/types/events'
+import {
+  EVENT_BY_TYPE,
+  type PlayingTeam,
+  type RugbyEvent,
+} from '@/types/events'
 import { formatTimestamp } from '@/utils/time'
 import type { AnalysisSession } from '@/types/session'
 
@@ -25,7 +29,11 @@ export function exportSessionJson(session: AnalysisSession) {
   downloadBlob(filename, blob)
 }
 
-export function exportEventsCsv(events: RugbyEvent[], videoFileName: string | null) {
+export function exportEventsCsv(
+  events: RugbyEvent[],
+  videoFileName: string | null,
+  teamNames?: Record<PlayingTeam, string>,
+) {
   const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')
   const filename = `${safeBaseName(videoFileName)}_${stamp}.csv`
   const header = [
@@ -36,12 +44,17 @@ export function exportEventsCsv(events: RugbyEvent[], videoFileName: string | nu
     'timestamp',
     'timecode',
     'team',
+    'team_name',
     'createdAt',
   ]
   const rows = [...events]
     .sort((a, b) => a.timestamp - b.timestamp)
     .map((ev) => {
       const label = EVENT_BY_TYPE[ev.type]?.label ?? ev.type
+      const teamName =
+        ev.team === 'neutral'
+          ? 'Match'
+          : (teamNames?.[ev.team] ?? ev.team)
       return [
         ev.id,
         ev.type,
@@ -50,6 +63,7 @@ export function exportEventsCsv(events: RugbyEvent[], videoFileName: string | nu
         ev.timestamp.toFixed(3),
         formatTimestamp(ev.timestamp),
         ev.team,
+        teamName,
         new Date(ev.createdAt).toISOString(),
       ]
         .map((cell) => `"${String(cell).replace(/"/g, '""')}"`)

@@ -1,4 +1,4 @@
-import type { RugbyEvent } from '@/types/events'
+import type { PlayingTeam, RugbyEvent } from '@/types/events'
 
 const DRAFT_KEY = 'video-analyse:draft'
 
@@ -6,6 +6,7 @@ export type DraftState = {
   sessionId: string | null
   sessionName: string
   videoFileName: string | null
+  teamNames?: Record<PlayingTeam, string>
   events: RugbyEvent[]
   updatedAt: number
 }

@@ -1,4 +1,4 @@
-import type { RugbyEvent } from './events'
+import type { PlayingTeam, RugbyEvent } from './events'
 
 /** Session d’analyse persistée (sans la vidéo binaire). */
 export interface AnalysisSession {
@@ -7,6 +7,7 @@ export interface AnalysisSession {
   videoFileName: string | null
   /** Chemin local (Electron uniquement). */
   videoPath?: string | null
+  teamNames?: Record<PlayingTeam, string>
   events: RugbyEvent[]
   createdAt: number
   updatedAt: number
