@@ -29,6 +29,7 @@ import type { AnalysisSession } from '@/types/session'
 import { createShortId, createUUID } from '@/utils/id'
 import { usePanelLayout } from '@/hooks/usePanelLayout'
 import { Splitter } from '@/components/Splitter'
+import { readSessionFile } from '@/utils/importSession'
 
 function buildSession(input: {
   id: string | null
@@ -53,6 +54,7 @@ function buildSession(input: {
 export default function App() {
   const playerRef = useRef<VideoPlayerHandle>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const jsonInputRef = useRef<HTMLInputElement>(null)
   const objectUrlRef = useRef<string | null>(null)
   const keepEventsOnNextOpen = useRef(false)
   const eventsRef = useRef<RugbyEvent[]>([])
@@ -248,8 +250,7 @@ export default function App() {
     }
   }, [apiAvailable, events.length, currentSession])
 
-  const onLoadSession = useCallback(async (id: string) => {
-    const session = await getSession(id)
+  const applySession = useCallback((session: AnalysisSession, source: string) => {
     setSessionId(session.id)
     setSessionName(session.name)
     setSessionCreatedAt(session.createdAt)
@@ -261,10 +262,35 @@ export default function App() {
     keepEventsOnNextOpen.current = true
     setStatus(
       session.videoFileName
-        ? `Session chargée — rouvre « ${session.videoFileName} » pour continuer.`
-        : 'Session chargée — ouvre une vidéo pour continuer.',
+        ? `${source} (${session.events.length} tags) — ouvre « ${session.videoFileName} » pour reprendre.`
+        : `${source} (${session.events.length} tags) — ouvre une vidéo pour reprendre.`,
     )
   }, [])
+
+  const onLoadSession = useCallback(
+    async (id: string) => {
+      const session = await getSession(id)
+      applySession(session, 'Session chargée')
+    },
+    [applySession],
+  )
+
+  const onImportJsonFile = useCallback(
+    async (e: ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0]
+      e.target.value = ''
+      if (!file) return
+      try {
+        const session = await readSessionFile(file)
+        applySession(session, 'JSON importé')
+      } catch (err) {
+        setStatus(
+          err instanceof Error ? err.message : 'Import JSON impossible',
+        )
+      }
+    },
+    [applySession],
+  )
 
   return (
     <div className="app">
@@ -274,6 +300,13 @@ export default function App() {
         accept="video/mp4,video/quicktime,.mp4,.m4v,.mov"
         hidden
         onChange={onFileSelected}
+      />
+      <input
+        ref={jsonInputRef}
+        type="file"
+        accept="application/json,.json"
+        hidden
+        onChange={onImportJsonFile}
       />
       <Toolbar
         eventCount={events.length}
@@ -288,6 +321,7 @@ export default function App() {
         }}
         onExportJson={onExportJson}
         onExportCsv={onExportCsv}
+        onImportJson={() => jsonInputRef.current?.click()}
         onSaveServer={onSaveServer}
         onOpenSessions={() => setSessionsOpen(true)}
       />

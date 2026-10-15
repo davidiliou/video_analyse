@@ -7,6 +7,7 @@ type Props = {
   onClearEvents: () => void
   onExportJson: () => void
   onExportCsv: () => void
+  onImportJson: () => void
   onSaveServer: () => void
   onOpenSessions: () => void
 }
@@ -20,6 +21,7 @@ export function Toolbar({
   onClearEvents,
   onExportJson,
   onExportCsv,
+  onImportJson,
   onSaveServer,
   onOpenSessions,
 }: Props) {
@@ -32,6 +34,14 @@ export function Toolbar({
       <div className="toolbar__actions">
         <button type="button" className="btn btn--primary" onClick={onOpenVideo}>
           Ouvrir une vidéo…
+        </button>
+        <button
+          type="button"
+          className="btn"
+          onClick={onImportJson}
+          title="Importer des tags depuis un JSON (export local)"
+        >
+          Importer JSON…
         </button>
         <button
           type="button"
