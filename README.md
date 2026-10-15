@@ -45,8 +45,21 @@ La vidéo reste **locale au navigateur** (pas d’upload) : après un chargement
 ### Sauvegarde
 
 - **Export JSON / CSV** — téléchargement local
+- **Importer JSON…** — reprendre une session exportée (ex. après déploiement Render)
 - **Sauvegarder / Charger** — API serveur (`/api/sessions`)
 - **Brouillon** — autosave `localStorage` (survit au refresh)
+
+## Render (en ligne)
+
+Service : https://video-analyse-abox.onrender.com/
+
+Fichier `render.yaml` (Blueprint) fourni. Pour redéployer :
+
+1. Pousser le code sur GitHub
+2. Sur [Render Dashboard](https://dashboard.render.com) → Web Service Docker déjà créé, ou **New** → **Blueprint**
+3. Variables utiles : `DATA_DIR=/data` (disque optionnel pour persister les sessions serveur)
+
+Sur le plan Free, le service s’endort après inactivité. La vidéo reste locale au navigateur (pas d’upload).
 
 ## Démarrage local
 

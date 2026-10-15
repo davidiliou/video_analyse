@@ -1,0 +1,28 @@
+# Blueprint Render — https://render.com/docs/blueprint-spec
+# Service existant : https://video-analyse-abox.onrender.com/
+
+services:
+  - type: web
+    name: video-analyse-abox
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    # Render injecte PORT automatiquement ; le serveur lit process.env.PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATA_DIR
+        value: /data
+      - key: STATIC_DIR
+        value: /app/dist
+
+    # Disque persistant pour « Sauvegarder » / « Charger ».
+    # Nécessite en général un plan payant (Starter+) : décommenter ou activer
+    # dans le dashboard si le plan Free refuse le disque.
+    # disk:
+    #   name: video-analyse-data
+    #   mountPath: /data
+    #   sizeGB: 1
