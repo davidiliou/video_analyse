@@ -1,0 +1,15 @@
+services:
+  video-analyse:
+    build: .
+    image: video-analyse:latest
+    ports:
+      - "8087:8087"
+    volumes:
+      - video-analyse-data:/data
+    environment:
+      PORT: "8087"
+      DATA_DIR: /data
+    restart: unless-stopped
+
+volumes:
+  video-analyse-data:
