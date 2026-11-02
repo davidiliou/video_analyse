@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, type ReactNode } from 'react'
 import { suspendGlobalShortcuts } from '@/utils/shortcuts'
 
 type Props = {
@@ -21,21 +21,50 @@ function HelpSection({
   )
 }
 
+const DEMO_SRC = 'demo/demo-coachs.mp4'
+const DEMO_CREDIT_URL =
+  'https://commons.wikimedia.org/wiki/File:2023_Rugby_World_Cup_warm-up_matches_-_Uruguay_vs_Chile_-_Video_1.webm'
+
 export function HelpModal({ open, onClose }: Props) {
   const onCloseRef = useRef(onClose)
   onCloseRef.current = onClose
   const bodyRef = useRef<HTMLDivElement>(null)
+  const demoRef = useRef<HTMLVideoElement | null>(null)
+
+  const bindDemo = useCallback((node: HTMLVideoElement | null) => {
+    if (node === null) demoRef.current?.pause()
+    demoRef.current = node
+  }, [])
+
+  const close = () => {
+    demoRef.current?.pause()
+    onClose()
+  }
 
   useEffect(() => {
     if (!open) return
-    return suspendGlobalShortcuts(() => onCloseRef.current())
+    return suspendGlobalShortcuts(() => {
+      demoRef.current?.pause()
+      onCloseRef.current()
+    })
   }, [open])
 
   useEffect(() => {
     if (!open) return
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== ' ' || event.repeat) return
-      const tag = (event.target as HTMLElement | null)?.tagName
+      const target = event.target as HTMLElement | null
+      const tag = target?.tagName
+      // Espace sur la démo ne doit pas atteindre le lecteur du match.
+      if (target === demoRef.current) {
+        event.stopPropagation()
+        return
+      }
+      if (tag === 'VIDEO') {
+        event.preventDefault()
+        event.stopPropagation()
+        return
+      }
       if (
         tag === 'BUTTON' ||
         tag === 'INPUT' ||
@@ -68,7 +97,7 @@ export function HelpModal({ open, onClose }: Props) {
   if (!open) return null
 
   return (
-    <div className="modal-backdrop" role="presentation" onClick={onClose}>
+    <div className="modal-backdrop" role="presentation" onClick={close}>
       <div
         className="modal modal--help"
         role="dialog"
@@ -83,7 +112,7 @@ export function HelpModal({ open, onClose }: Props) {
           <button
             type="button"
             className="btn btn--ghost"
-            onClick={onClose}
+            onClick={close}
             aria-label="Fermer"
           >
             ✕
@@ -91,6 +120,27 @@ export function HelpModal({ open, onClose }: Props) {
         </header>
 
         <div className="modal__body help-body" ref={bodyRef} tabIndex={0}>
+          <figure className="help-demo">
+            <figcaption className="help-demo__title" id="help-demo-title">
+              Vidéo de démonstration
+            </figcaption>
+            {/* Chemin relatif : servi depuis public/ en http et en file:// (Electron). */}
+            <video
+              ref={bindDemo}
+              className="help-demo__player"
+              controls
+              preload="metadata"
+              src={DEMO_SRC}
+              aria-labelledby="help-demo-title"
+            />
+            <p className="help-demo__credit">
+              Images du match : NaBUru38,{' '}
+              <a href={DEMO_CREDIT_URL} target="_blank" rel="noopener noreferrer">
+                Wikimedia Commons
+              </a>
+              , CC BY-SA 4.0
+            </p>
+          </figure>
           <p className="help-lead">
             Analyse Rugby sert à revoir un match et à poser des tags à la
             main, à l’instant où se trouve la vidéo. Rien n’est détecté
@@ -428,7 +478,7 @@ export function HelpModal({ open, onClose }: Props) {
             Échap, le bouton ✕ ou un clic à l’extérieur ferment cette
             fenêtre.
           </p>
-          <button type="button" className="btn btn--primary" onClick={onClose}>
+          <button type="button" className="btn btn--primary" onClick={close}>
             Fermer
           </button>
         </footer>
