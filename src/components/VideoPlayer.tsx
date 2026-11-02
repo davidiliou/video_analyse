@@ -6,6 +6,7 @@ import {
   forwardRef,
 } from 'react'
 import { formatTimestamp } from '@/utils/time'
+import { globalShortcutsSuspended } from '@/utils/shortcuts'
 import { EVENT_BY_TYPE, type RugbyEvent } from '@/types/events'
 
 export const PLAYBACK_RATES = [0.5, 0.75, 1, 1.25, 1.5, 2, 2.5, 3] as const
@@ -89,6 +90,8 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, Props>(
 
     useEffect(() => {
       const onKey = (e: KeyboardEvent) => {
+        // Mode d’emploi ouvert : ne pas lancer la lecture ni un tag clavier.
+        if (globalShortcutsSuspended()) return
         if (e.key !== ' ' || e.repeat) return
         const target = e.target as HTMLElement | null
         if (

@@ -12,6 +12,7 @@ import { TaggingPanel } from '@/components/TaggingPanel'
 import { EventTimeline } from '@/components/EventTimeline'
 import { SessionsModal } from '@/components/SessionsModal'
 import { StatsSummary } from '@/components/StatsSummary'
+import { HelpModal } from '@/components/HelpModal'
 import {
   checkApiAvailable,
   getSession,
@@ -78,6 +79,7 @@ export default function App() {
   const [status, setStatus] = useState<string | null>(null)
   const [sessionsOpen, setSessionsOpen] = useState(false)
   const [statsOpen, setStatsOpen] = useState(false)
+  const [helpOpen, setHelpOpen] = useState(false)
   const {
     eventsWidth,
     taggingHeight,
@@ -334,6 +336,7 @@ export default function App() {
         saving={saving}
         canExport={events.length > 0}
         onOpenVideo={openVideo}
+        onOpenHelp={() => setHelpOpen(true)}
         onClearEvents={() => {
           setEvents([])
           clearDraft()
@@ -464,6 +467,7 @@ export default function App() {
         onClose={() => setSessionsOpen(false)}
         onLoad={onLoadSession}
       />
+      <HelpModal open={helpOpen} onClose={() => setHelpOpen(false)} />
       <StatsSummary
         open={statsOpen}
         events={events}

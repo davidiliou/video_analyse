@@ -4,6 +4,7 @@ type Props = {
   saving: boolean
   canExport: boolean
   onOpenVideo: () => void
+  onOpenHelp: () => void
   onClearEvents: () => void
   onExportJson: () => void
   onExportCsv: () => void
@@ -18,6 +19,7 @@ export function Toolbar({
   saving,
   canExport,
   onOpenVideo,
+  onOpenHelp,
   onClearEvents,
   onExportJson,
   onExportCsv,
@@ -34,6 +36,14 @@ export function Toolbar({
       <div className="toolbar__actions">
         <button type="button" className="btn btn--primary" onClick={onOpenVideo}>
           Ouvrir une vidéo…
+        </button>
+        <button
+          type="button"
+          className="btn"
+          onClick={onOpenHelp}
+          title="Comment utiliser l’application"
+        >
+          Mode d'emploi
         </button>
         <button
           type="button"
